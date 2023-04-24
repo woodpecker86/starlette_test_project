@@ -1,32 +1,44 @@
 import contextlib
-import logging
 
 from starlette.applications import Starlette
+from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
+from . import utils
 from .config import DEBUG
-from .database import get_database
-
-logger = logging.getLogger(__name__)
+from .database import connect_to_database, disconnect_from_database
 
 
 @contextlib.asynccontextmanager
-async def lifespan(starlette: Starlette):
-    database = await get_database()
-    await database.connect()
+async def lifespan(app: Starlette):
+    await connect_to_database()
     yield
-    await database.disconnect()
+    await disconnect_from_database()
 
 
-async def homepage(scope, receive, send):
-    assert scope['type'] == 'http'
-    response = JSONResponse({'hello': 'world'})
-    await response(scope, receive, send)
+async def start_page(receive: Request) -> JSONResponse:
+    return JSONResponse({'hello': 'world'})
 
+
+async def get_day_currency(receive: Request) -> JSONResponse:
+    needed_day = receive.path_params['day']
+    return JSONResponse({'day': 'ddd'})
+
+
+async def get_currency_codes(receive: Request) -> JSONResponse:
+    return JSONResponse({'currencies': ['USD']})
+
+
+async def delete_currency(receive: Request) -> JSONResponse:
+    return JSONResponse({'Deleted currency': receive.path_params['currency_code']})
 
 routes = [
-    Route('/', homepage),
+    Route('/', start_page),
+    Route('/currencies', get_currency_codes),
+    Route('/delete/{currency_code:str}', delete_currency),
+    Route('/{day:datetime}', get_day_currency),
 ]
+
 
 finance_app = Starlette(debug=DEBUG, routes=routes, lifespan=lifespan)
