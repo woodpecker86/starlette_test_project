@@ -1,4 +1,5 @@
 import contextlib
+from datetime import datetime
 
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -8,6 +9,7 @@ from starlette.routing import Route
 from . import utils
 from .config import DEBUG
 from .database import connect_to_database, disconnect_from_database
+from .crud import get_date_rate
 
 
 @contextlib.asynccontextmanager
@@ -18,16 +20,24 @@ async def lifespan(app: Starlette):
 
 
 async def start_page(receive: Request) -> JSONResponse:
-    return JSONResponse({'hello': 'world'})
+    rates = await get_date_rate(datetime.now())
+    return JSONResponse({'Currencies': rates})
 
 
 async def get_day_currency(receive: Request) -> JSONResponse:
     needed_day = receive.path_params['day']
-    return JSONResponse({'day': 'ddd'})
+    rates = await get_date_rate(needed_day)
+    return JSONResponse({'Currencies': rates})
 
 
 async def get_currency_codes(receive: Request) -> JSONResponse:
-    return JSONResponse({'currencies': ['USD']})
+    return JSONResponse({'currencies': {'USD': 'Доллар'}})
+
+
+async def get_currency_rates(receive: Request) -> JSONResponse:
+    return JSONResponse({'rates': {'date': 'yyyy-mm-dd',
+                                   'char_code': 'USD',
+                                   'value': f'{1} to {80}'}})
 
 
 async def delete_currency(receive: Request) -> JSONResponse:
@@ -36,6 +46,7 @@ async def delete_currency(receive: Request) -> JSONResponse:
 routes = [
     Route('/', start_page),
     Route('/currencies', get_currency_codes),
+    Route('/rates', get_currency_rates),
     Route('/delete/{currency_code:str}', delete_currency),
     Route('/{day:datetime}', get_day_currency),
 ]

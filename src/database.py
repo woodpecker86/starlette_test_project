@@ -1,5 +1,3 @@
-from typing import AsyncGenerator
-
 from sqlalchemy import Column, Integer, String, DATE, ForeignKey, select
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.orm import relationship
@@ -19,10 +17,10 @@ class Currency(Base):
     __tablename__ = "currency"
 
     num_code = Column(Integer, primary_key=True)
-    char_code = Column(String(10))
+    char_code = Column(String(10), unique=True)
     name = Column(String(30))
 
-    daily_rate = relationship("CurrencyRate", back_populates="currency")
+    daily_rate = relationship("CurrencyRate", back_populates="currency", cascade="all, delete")
 
     def __repr__(self):
         return f"Currency(num_code={self.num_code!r}, char_code={self.char_code!r})"
@@ -33,22 +31,23 @@ class CurrencyRate(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(DATE, nullable=False)
-    currency_id = Column(Integer, ForeignKey("currency.num_code"))
+    currency_id = Column(Integer, ForeignKey("currency.num_code", ondelete="CASCADE"))
     nominal = Column(Integer)
     value = Column(Integer)
 
     currency = relationship("Currency", back_populates="daily_rate")
 
     def __repr__(self):
-        return f"{self.C}(id={self.id!r}, email_address={self.email_address!r})"
+        return f"CurrencyRate(date={self.date!r}, currency={self.currency.char_code!r}," \
+               f"value='{self.value} for {self.nominal}')"
 
 
 async def connect_to_database():
     async with async_session_maker() as conn:
-        await create_tables_if_nessessary(conn)
+        await create_tables_if_necessary(conn)
 
 
-async def create_tables_if_nessessary(connection: AsyncSession):
+async def create_tables_if_necessary(connection: AsyncSession):
     try:
         await connection.execute(select(Currency))
     except OperationalError:
