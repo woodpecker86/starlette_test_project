@@ -9,7 +9,10 @@ from starlette.routing import Route
 from . import utils
 from .config import DEBUG
 from .database import connect_to_database, disconnect_from_database
-from .crud import get_date_rates, get_currencies, delete_currency_data
+from .crud import (get_date_rates,
+                   get_currencies,
+                   delete_currency_data,
+                   get_all_rates)
 
 
 @contextlib.asynccontextmanager
@@ -38,12 +41,10 @@ async def get_currency_codes(receive: Request) -> JSONResponse:
 
 
 async def get_currency_rates(receive: Request) -> JSONResponse:
-    limit = receive.query_params['limit'] if 'limit' in receive.query_params else 0
-    offset = receive.query_params['offset'] if 'offset' in receive.query_params else 0
-
-    return JSONResponse({'rates': {'date': 'yyyy-mm-dd',
-                                   'char_code': 'USD',
-                                   'value': f'{1} to {80}'}})
+    limit = int(receive.query_params['limit']) if 'limit' in receive.query_params else 0
+    offset = int(receive.query_params['offset']) if 'offset' in receive.query_params else 0
+    result = await get_all_rates(limit, offset)
+    return JSONResponse({'rates': result})
 
 
 async def delete_currency(receive: Request) -> JSONResponse:
@@ -52,9 +53,9 @@ async def delete_currency(receive: Request) -> JSONResponse:
     except KeyError:
         return JSONResponse({'Status': 'error',
                              'Msg': 'not specified currency char_code'})
-    await delete_currency_data(char_code)
+    rows_num = await delete_currency_data(char_code)
     return JSONResponse({'Status': 'ok',
-                        'Deleted currency': char_code})
+                        'Number of deleted rates': rows_num})
 
 
 routes = [

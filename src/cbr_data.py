@@ -11,6 +11,7 @@ from .config import CURRENCY_RATE_SOURCE
 async def get_cbr_data(date: datetime) -> List[Dict[str, str]]:
     async with httpx.AsyncClient() as client:
         response = await client.get(CURRENCY_RATE_SOURCE, params={'date_req': date.strftime('%d/%m/%Y')})
+        response.raise_for_status()
     return parse_response(response.content)
 
 
@@ -26,7 +27,8 @@ def parse_response(content: bytes) -> List[Dict[str, str]]:
 def get_currency_data(node: ElementTree.Element) -> Dict[str, str]:
     data = dict()
     for elem in node:
-        data[change_tag_to_correct_key(elem.tag)] = elem.text
+        if elem.tag not in ('NumCode',):
+            data[change_tag_to_correct_key(elem.tag)] = elem.text.replace(',', '.')
     return data
 
 
