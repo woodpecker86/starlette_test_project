@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, DATE, ForeignKey, select
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker, backref
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.exc import OperationalError
@@ -16,14 +16,18 @@ async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit
 class Currency(Base):
     __tablename__ = "currency"
 
-    num_code = Column(Integer, primary_key=True)
-    char_code = Column(String(10), unique=True)
+    char_code = Column(String(10), unique=True, primary_key=True)
     name = Column(String(30))
 
-    daily_rate = relationship("CurrencyRate", back_populates="currency", cascade="all, delete")
+    rate = relationship(
+        "CurrencyRate",
+        back_populates="currency",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
 
     def __repr__(self):
-        return f"Currency(num_code={self.num_code!r}, char_code={self.char_code!r})"
+        return f"Currency(char_code={self.char_code!r}, name={self.name!r})"
 
 
 class CurrencyRate(Base):
@@ -31,11 +35,11 @@ class CurrencyRate(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(DATE, nullable=False)
-    currency_id = Column(Integer, ForeignKey("currency.num_code", ondelete="CASCADE"))
+    currency_id = Column(Integer, ForeignKey("currency.char_code", ondelete="CASCADE"))
     nominal = Column(Integer)
     value = Column(Integer)
 
-    currency = relationship("Currency", back_populates="daily_rate")
+    currency = relationship("Currency", back_populates="rate")
 
     def __repr__(self):
         return f"CurrencyRate(date={self.date!r}, currency={self.currency.char_code!r}," \
