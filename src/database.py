@@ -1,13 +1,12 @@
 from typing import Dict
 
 from sqlalchemy import Column, Integer, Float, String, DATE, ForeignKey, select
-from sqlalchemy.orm import declarative_base, sessionmaker, backref
+from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.exc import OperationalError
 
 from .config import DATABASE_URL
-
 
 Base = declarative_base()
 

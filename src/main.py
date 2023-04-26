@@ -47,7 +47,7 @@ async def get_currency_rates(receive: Request) -> JSONResponse:
     return JSONResponse({'rates': result})
 
 
-async def delete_currency(receive: Request) -> JSONResponse:
+async def delete_currency_rates(receive: Request) -> JSONResponse:
     try:
         char_code = receive.query_params['char_code']
     except KeyError:
@@ -62,7 +62,7 @@ routes = [
     Route('/', start_page),
     Route('/currencies', get_currency_codes),
     Route('/rates', get_currency_rates),
-    Route('/delete', delete_currency),
+    Route('/delete', delete_currency_rates),
     Route('/{day:datetime}', get_day_currency),
 ]
 
